@@ -1,18 +1,28 @@
-import { useDispatch } from "react-redux";
+import { useDispatch, useSelector } from "react-redux";
 import { toggleMenu } from "../utils/appSlice";
 import { useEffect, useState } from "react";
 import { YOUTUBE_SEARCH_API } from "../utils/constants";
+import { cacheResults } from "../utils/searchSlice";
 
 
 const Head = () => {
-  const dipatch = useDispatch();
+  const dispatch = useDispatch();
   const[searchQuary,setSearchQuary] = useState("");
   const [suggestions, setSuggestions] = useState([]);
   const [showSuggestion,setShowSuggestion] = useState(false);
 
+  const searchCache  = useSelector((store)=> store.search);
+
   useEffect(()=>{
 
-    const timer = setTimeout(()=>{getSuggestion()},200);
+    const timer = setTimeout(()=>{
+      if(searchCache[searchQuary]){
+        setSuggestions(searchCache[searchQuary]);
+      }
+      else{
+        getSuggestion();
+      }
+      },200);
     //this function is to decline call which are below 200 milisecond 
     //or koi bhi 2 key stroke ke bich ka 200 ms se kam hai to api call decline ho jayegi
      return () => {
@@ -26,10 +36,13 @@ const Head = () => {
     const json = await data.json();
 
     setSuggestions(json[1]);
-  }
+    dispatch(cacheResults({
+      [searchQuary]:json[1],
+    }));
+  };
 
   const handleToggle = ()=>{
-     dipatch(toggleMenu());
+     dispatch(toggleMenu());
   } 
   
   return (
